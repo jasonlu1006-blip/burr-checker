@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>神外 Burr 自費判斷器 v2</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#172033; --muted:#5d6a82; --line:#dde3ec;
+    --field:#ffffff; --field-line:#c6cfdd; --accent:#2f5bd3; --accent-ink:#ffffff;
+    --ok-bg:#e9f7ee; --ok-line:#b9dec7; --ok:#165f35;
+    --bad-bg:#fdeeee; --bad-line:#ecc3c3; --bad:#9b2323;
+    --warn-bg:#fff7e3; --warn-line:#ead69a; --warn:#7a5000;
+    --tag-cov-bg:#fde0e0; --tag-cov:#8d2020;
+    --tag-no-bg:#e4f1fd; --tag-no:#155a92;
+    --tag-ind-bg:#eef0f4; --tag-ind:#4a5568;
+    --tag-dep-bg:#efe8fc; --tag-dep:#5e3ea1;
+    --tag-unk-bg:#fff0c6; --tag-unk:#775000;
+    --rule-bg:#f3f6fe; --rule-line:#8aa2f3; --th-bg:#f6f8fb; --code-bg:#edf1f7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161d; --card:#1a1f28; --ink:#e6eaf1; --muted:#a3adbf; --line:#2c3441;
+      --field:#12161d; --field-line:#3a4454; --accent:#7c9cf5; --accent-ink:#0f1420;
+      --ok-bg:#132a1d; --ok-line:#24553a; --ok:#8fdcaf;
+      --bad-bg:#2e1616; --bad-line:#5c2a2a; --bad:#f3a5a5;
+      --warn-bg:#2d2412; --warn-line:#5c4a1e; --warn:#f2cf7e;
+      --tag-cov-bg:#4a1f1f; --tag-cov:#ffc2c2;
+      --tag-no-bg:#16324a; --tag-no:#a9d4fb;
+      --tag-ind-bg:#2a303b; --tag-ind:#c5ccd8;
+      --tag-dep-bg:#2e2447; --tag-dep:#d2c2fb;
+      --tag-unk-bg:#3d3212; --tag-unk:#f5dc8c;
+      --rule-bg:#1c2436; --rule-line:#5068b8; --th-bg:#202631; --code-bg:#262d39;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161d; --card:#1a1f28; --ink:#e6eaf1; --muted:#a3adbf; --line:#2c3441;
+    --field:#12161d; --field-line:#3a4454; --accent:#7c9cf5; --accent-ink:#0f1420;
+    --ok-bg:#132a1d; --ok-line:#24553a; --ok:#8fdcaf;
+    --bad-bg:#2e1616; --bad-line:#5c2a2a; --bad:#f3a5a5;
+    --warn-bg:#2d2412; --warn-line:#5c4a1e; --warn:#f2cf7e;
+    --tag-cov-bg:#4a1f1f; --tag-cov:#ffc2c2;
+    --tag-no-bg:#16324a; --tag-no:#a9d4fb;
+    --tag-ind-bg:#2a303b; --tag-ind:#c5ccd8;
+    --tag-dep-bg:#2e2447; --tag-dep:#d2c2fb;
+    --tag-unk-bg:#3d3212; --tag-unk:#f5dc8c;
+    --rule-bg:#1c2436; --rule-line:#5068b8; --th-bg:#202631; --code-bg:#262d39;
+  }
+  :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  html{scroll-padding-top:env(safe-area-inset-top,0px)}
+  *,*::before,*::after{box-sizing:inherit}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei","Segoe UI",sans-serif;line-height:1.6}
+  .wrap{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+  h1{font-size:1.75rem;line-height:1.3;margin:0 0 6px}
+  h2{font-size:1.15rem;margin:0 0 10px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:700px){.grid{grid-template-columns:1fr}}
+  label{font-weight:700;display:block;margin-bottom:6px}
+  .hint{font-size:.82rem;color:var(--muted);font-weight:400}
+  input,textarea{width:100%;border:1px solid var(--field-line);border-radius:10px;padding:11px 12px;font-size:16px;background:var(--field);color:var(--ink);font-family:inherit}
+  input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  textarea{min-height:84px;resize:vertical}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  button{border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:16px;cursor:pointer;font-family:inherit}
+  .primary{background:var(--accent);color:var(--accent-ink)}
+  .ghost{background:var(--code-bg);color:var(--ink)}
+  .result{border-radius:14px;padding:18px;margin-top:18px;border:1px solid}
+  .result h3{margin:0 0 8px;font-size:1.3rem;line-height:1.35}
+  .result p{margin:6px 0}
+  .result ul{margin:6px 0 0;padding-left:1.2em}
+  .result li{margin:4px 0}
+  .result.dont{background:var(--bad-bg);border-color:var(--bad-line);color:var(--bad)}
+  .result.sign{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+  .result.review{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+  .small{font-size:.85rem;color:var(--muted)}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;margin-top:10px;min-width:620px}
+  th,td{border-bottom:1px solid var(--line);text-align:left;vertical-align:top;padding:9px 8px;font-size:.88rem;line-height:1.45}
+  th{color:var(--muted);background:var(--th-bg);font-weight:700}
+  .tag{display:inline-block;border-radius:999px;padding:2px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
+  .tag.covered{background:var(--tag-cov-bg);color:var(--tag-cov)}
+  .tag.nocover{background:var(--tag-no-bg);color:var(--tag-no)}
+  .tag.indirect{background:var(--tag-ind-bg);color:var(--tag-ind)}
+  .tag.dep{background:var(--tag-dep-bg);color:var(--tag-dep)}
+  .tag.unknown{background:var(--tag-unk-bg);color:var(--tag-unk)}
+  .rule{padding:10px 12px;border-left:4px solid var(--rule-line);background:var(--rule-bg);border-radius:8px;margin:10px 0}
+  details{margin-top:10px}
+  summary{cursor:pointer;font-weight:700}
+  a{color:var(--accent)}
+  code{background:var(--code-bg);border-radius:6px;padding:1px 5px;font-size:.92em}
+  ol.src{padding-left:1.3em;margin:8px 0}
+  ol.src li{margin:6px 0}
+  .footer{margin-top:22px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>神外 Burr 自費判斷器</h1>
+  <p class="sub">輸入本次<strong>實際要申報</strong>的主手術、副手術與處置碼，判斷同一支單次使用 Burr／高速切割系統是否已含在健保支付點數內。規則版本 v2，2026-09-21。</p>
+
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label for="main">主手術碼</label>
+        <input id="main" list="knownCodes" placeholder="例如 83039B" autocomplete="off" autocapitalize="characters">
+      </div>
+      <div>
+        <label for="sub1">第一副手術碼</label>
+        <input id="sub1" list="knownCodes" placeholder="例如 83051B" autocomplete="off" autocapitalize="characters">
+      </div>
+      <div>
+        <label for="sub2">第二副手術碼</label>
+        <input id="sub2" list="knownCodes" placeholder="例如 83046B" autocomplete="off" autocapitalize="characters">
+      </div>
+      <div>
+        <label for="proc">其他處置碼 <span class="hint">可輸入多個，以空白、逗號或換行分隔</span></label>
+        <textarea id="proc" placeholder="例如：83097B"></textarea>
+      </div>
+    </div>
+    <datalist id="knownCodes"></datalist>
+    <div class="btns">
+      <button class="primary" type="button" id="runBtn">判斷 Burr 是否可收自費</button>
+      <button class="ghost" type="button" id="clearBtn">清除</button>
+    </div>
+    <div id="resultBox" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h2>判斷規則</h2>
+    <div class="rule"><strong>規則 1｜任一實際申報碼已含單次使用 Burr：</strong>同一支 Burr 不得另向病人收自費。該碼即使列為副手術，不論依手術通則六是否以減半點數計算，所含特材仍屬健保給付項目，依健保法第 68 條不得自立名目向保險對象收費。</div>
+    <div class="rule"><strong>規則 2｜申報組合本身有問題：</strong>83013C 與其他腦部手術碼並列、依附碼缺少基礎碼、或出現支付標準明定不得同時申報的組合時，先修正申報碼再判斷，不直接給結論。</div>
+    <div class="rule"><strong>規則 3｜出現未收錄碼：</strong>標成「暫不能判定」，交申報組確認，不猜測。</div>
+    <div class="rule"><strong>規則 4｜所有碼都未含 Burr：</strong>才可進入自費說明流程，且須同時符合三個前提：術中確實使用、該品項為院內核定可收費的自費品項、術前完成說明與同意。</div>
+  </div>
+
+  <div class="card">
+    <h2>已收錄代碼與依據</h2>
+    <p class="small">只收錄已對照健保署原文、會影響神外 Burr 判斷的代碼。每一列都標示依據文件，點文件名稱可開啟原文。</p>
+    <details>
+      <summary>查看已收錄代碼（<span id="dbCount"></span> 項）</summary>
+      <div class="scroll"><div id="dbTable"></div></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>查證範圍</h2>
+    <p class="small">已逐字對照：103 年腦部手術高速切割系統包裹清單、110 年支付標準神外修正對照、脊椎單次使用鑽頭註記之修正規定、115 年第 4 次修正規定（115/09/01 生效）；並核對 115 年第 1 次與第 3 次修正總說明，兩者皆未修改本頁收錄之神外代碼的特材註記。</p>
+    <p class="small">未逐件對照：111 年至 114 年各次修正、115 年第 2 次修正。標示為「間接核對」的代碼，依據是其未列入 103 年 25 項包裹清單，且上述已查文件未見新增註記；使用前請以院內申報系統的現行支付標準再確認。</p>
+  </div>
+
+  <div class="card">
+    <h2>原始文件</h2>
+    <ol class="src" id="srcList"></ol>
+  </div>
+
+  <p class="footer">本頁為術前判斷輔助工具，不取代院內申報單位與醫材管理單位對實際特材碼、院內收費碼及最新公告的確認。健保署公告更新時，本頁規則需同步修訂。</p>
+</div>
+
+<script>
+const SRC = {
+  s103:  {t:"健保署｜103 年第 2 次支付標準共同擬訂會議紀錄（附件 5：25 項腦部手術包裹單次使用拋棄式高速切割系統）", u:"https://www.nhi.gov.tw/ch/dl-79522-fa2c4c92e17449659011867779fd680d-1.pdf"},
+  s110:  {t:"行政院公報｜110 年支付標準部分診療項目修正對照表（第 27 卷第 90 期，含神外各碼現行註記）", u:"https://gazette.nat.gov.tw/EG_FileManager/eguploadpub/eg027090/ch08/type3/gov70/num23/images/Eg01.pdf"},
+  spine: {t:"健保署｜支付標準部分診療項目修正規定（83002C、83003C、83024C、83046B 單次使用鑽頭註記）", u:"https://www.nhi.gov.tw/ch/dl-51030-94117bc34ed644a9a0c4aa3f9dd22b82-1.pdf"},
+  s1154: {t:"健保署｜115 年第 4 次支付標準修正規定（115/09/01 生效，含手術通則六、七與 83052C、65082B）", u:"https://www.nhi.gov.tw/ch/dl-101750-eb9c143ed81f495891368d3e50a0630a-1.pdf"},
+  notice:{t:"健保署｜115/09/01 生效修正公告頁", u:"https://www.nhi.gov.tw/ch/cp-20377-a36cd-3258-1.html"},
+  list:  {t:"健保署｜法規公告列表（查最新修正用）", u:"https://www.nhi.gov.tw/ch/lp-3258-1.html"},
+  law68: {t:"全民健康保險法第 68 條（不得自立名目向保險對象收取費用）", u:"https://law.lia-roc.org.tw/Law/Article?lsid=FL014028&amp;lawno=68"}
+};
+
+const BUNDLE = (p) => `一般材料費及特殊材料費得另加計 ${p}%，上開特殊材料為單一使用之拋棄式特殊材料；屬 103 年納入包裹之 25 項腦部手術`;
+const INDIRECT = "未列入 103 年 25 項包裹清單；已查修正文件未見新增單次使用特材註記";
+
+// group: brain = 顱內／顱骨手術，用於 83013C 並列檢查
+const DB = {
+  // ===== 已含單次使用 Burr／高速切割系統 =====
+  "83001B":{name:"腦微血管減壓術", status:"covered", group:"brain", basis:BUNDLE(104), src:"s103"},
+  "83013C":{name:"頭顱穿洞術（止血引流、穿刺檢查）", status:"covered", group:"burrhole", basis:BUNDLE(314)+"；註1：如以顱骨穿孔術實施其他神經外科手術，按各該手術項目所訂點數申報", src:"s103"},
+  "83015C":{name:"顱骨切除術", status:"covered", group:"brain", basis:BUNDLE(131), src:"s110"},
+  "83016B":{name:"頭顱成形術", status:"covered", group:"brain", basis:BUNDLE(148), src:"s110"},
+  "83017B":{name:"腦瘤切除－3 公分以內", status:"covered", group:"brain", basis:BUNDLE(96), src:"s110"},
+  "83018B":{name:"腦瘤切除－3 至 6 公分", status:"covered", group:"brain", basis:BUNDLE(80), src:"s110"},
+  "83019B":{name:"腦瘤切除－6 公分以上", status:"covered", group:"brain", basis:BUNDLE(78), src:"s110"},
+  "83036C":{name:"硬腦膜外血腫清除術", status:"covered", group:"brain", basis:BUNDLE(104), src:"s110"},
+  "83037C":{name:"急性硬腦膜下血腫清除術", status:"covered", group:"brain", basis:BUNDLE(106), src:"s110"},
+  "83038C":{name:"慢性硬腦膜下血腫清除術", status:"covered", group:"brain", basis:BUNDLE(132), src:"s103"},
+  "83039B":{name:"腦內血腫清除術", status:"covered", group:"brain", basis:BUNDLE(100), src:"s110"},
+  "83047B":{name:"腦膜或脊髓膜突出修補術", status:"covered", group:"brain", basis:BUNDLE(110), src:"s103"},
+  "83056B":{name:"癲癇症腦葉切除術", status:"covered", group:"brain", basis:BUNDLE(77), src:"s103"},
+  "83057B":{name:"經由蝶竇之腦下垂體瘤切除", status:"covered", group:"brain", basis:BUNDLE(86), src:"s103"},
+  "83063B":{name:"顱內外血管吻合術", status:"covered", group:"brain", basis:BUNDLE(99), src:"s103"},
+  "83064B":{name:"開顱術摘除腦血管瘤－無病徵", status:"covered", group:"brain", basis:BUNDLE(74), src:"s110"},
+  "83065B":{name:"開顱術摘除腦血管瘤－有病徵", status:"covered", group:"brain", basis:BUNDLE(73), src:"s110"},
+  "83066B":{name:"開顱術摘除腦血管瘤－巨大", status:"covered", group:"brain", basis:BUNDLE(73), src:"s110"},
+  "83067B":{name:"開顱術摘除動靜脈畸型－小型表淺", status:"covered", group:"brain", basis:BUNDLE(81), src:"s110"},
+  "83068B":{name:"開顱術摘除動靜脈畸型－小型深部", status:"covered", group:"brain", basis:BUNDLE(77), src:"s110"},
+  "83069B":{name:"開顱術摘除動靜脈畸型－中型表淺", status:"covered", group:"brain", basis:BUNDLE(74), src:"s110"},
+  "83070B":{name:"開顱術摘除動靜脈畸型－中型深部", status:"covered", group:"brain", basis:BUNDLE(72), src:"s110"},
+  "83071B":{name:"開顱術摘除動靜脈畸型－大型", status:"covered", group:"brain", basis:BUNDLE(70), src:"s110"},
+  "83087B":{name:"顏面神經減壓術", status:"covered", group:"brain", basis:BUNDLE(144), src:"s103"},
+  "83088B":{name:"顱底瘤手術", status:"covered", group:"brain", basis:BUNDLE(65), src:"s103"},
+  "83002C":{name:"椎弓切除術（減壓）－二節以內", status:"covered", group:"spine", basis:"一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭得另加計 82%", src:"spine"},
+  "83003C":{name:"椎弓切除術（減壓）－超過二節", status:"covered", group:"spine", basis:"一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭得另加計 73%", src:"spine"},
+  "83024C":{name:"椎間盤切除術－腰椎", status:"covered", group:"spine", basis:"一般材料費及單次使用切割附件得另加計 69%", src:"spine"},
+  "83046B":{name:"脊椎融合術－後融合，有固定物，六節以內", status:"covered", group:"spine", basis:"一般材料費及單次使用鑽頭得另加計 58%", src:"spine"},
+
+  // ===== 支付標準原文未列單次使用特材註記 =====
+  "83011B":{name:"凹陷性顱骨骨折之手術－簡單骨折", status:"nocover", group:"brain", basis:"原文僅註明限神經外科專科醫師施行，無特材加計註記", src:"s110"},
+  "83012B":{name:"凹陷性顱骨骨折之手術－開放骨折", status:"nocover", group:"brain", basis:"原文僅註明限神經外科專科醫師施行，無特材加計註記", src:"s110"},
+  "83052C":{name:"歐氏貯囊置放手術（Ommaya reservoir）", status:"nocover", group:"brain", basis:"115/09/01 現行原文僅註明限神經外科專科醫師施行，無特材加計註記", src:"s1154"},
+  "83022C":{name:"椎間盤切除術－頸椎", status:"nocover", group:"spine", basis:"原文單次使用切割附件註記僅列 83024C，本碼無", src:"spine"},
+  "83023C":{name:"椎間盤切除術－胸椎", status:"nocover", group:"spine", basis:"原文單次使用切割附件註記僅列 83024C，本碼無", src:"spine"},
+  "83033B":{name:"椎弓整形術（Laminoplasty）", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"s110"},
+  "83040B":{name:"良性脊髓腫瘤切除術", status:"nocover", group:"spine", basis:"原文僅註明限神經外科及骨科專科醫師施行，無特材加計註記", src:"s110"},
+  "83041B":{name:"惡性脊髓腫瘤切除術", status:"nocover", group:"spine", basis:"原文僅註明限神經外科及骨科專科醫師施行，無特材加計註記", src:"s110"},
+  "83042B":{name:"脊椎內脊髓內腫瘤切除術", status:"nocover", group:"spine", basis:"原文僅註明限神經外科及骨科專科醫師施行，無特材加計註記", src:"s110"},
+  "83043B":{name:"脊椎融合術－前融合，無固定物，四節以內", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"spine"},
+  "83044B":{name:"脊椎融合術－前融合，有固定物，四節以內", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"spine"},
+  "83045B":{name:"脊椎融合術－後融合，無固定物", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"spine"},
+  "65082B":{name:"經鼻內視鏡顱底腦脊髓液漏修補術", status:"nocover", group:"skullbase", basis:"原文為一般材料費得另加計 4%，未列單次使用特材；不得同時申報 65060B、83047B 及 83057B", src:"s1154", noWith:["65060B","83047B","83057B"]},
+
+  // ===== 間接核對：未列入 103 年包裹清單 =====
+  "83010B":{name:"腦組織活體切片", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83049B":{name:"腦室腹腔分流手術（V-P shunt）", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83051B":{name:"腦室體外引流（EVD）", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83080B":{name:"顱內壓監視置入", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83081B":{name:"立體定位術－切片", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83082B":{name:"立體定位術－抽吸", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83083B":{name:"立體定位術－放射同位素置放", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  "83084B":{name:"立體定位術－功能性失調", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+
+  // ===== 依附碼 =====
+  "83014C":{name:"頭顱穿洞術－每加一孔", status:"dependent", group:"burrhole", base:"83013C", basis:"附加孔碼，原文無特材加計註記；判斷跟隨 83013C", src:"s103"},
+  "83095B":{name:"前融合，無固定物－每增加四節以內", status:"dependent", group:"spine", base:"83043B", basis:"附加節數碼；判斷跟隨 83043B", src:"spine"},
+  "83096B":{name:"前融合，有固定物－每增加四節以內", status:"dependent", group:"spine", base:"83044B", basis:"附加節數碼；判斷跟隨 83044B", src:"spine"},
+  "83097B":{name:"後融合，有固定物－每增加六節以內", status:"dependent", group:"spine", base:"83046B", basis:"附加節數碼；判斷跟隨 83046B", src:"spine"}
+};
+
+const STATUS = {
+  covered:  {tag:"covered",  label:"已含 Burr"},
+  nocover:  {tag:"nocover",  label:"原文未列特材"},
+  indirect: {tag:"indirect", label:"間接核對：未含"},
+  dependent:{tag:"dep",      label:"依附碼"},
+  unknown:  {tag:"unknown",  label:"未收錄"}
+};
+
+const $ = (id) => document.getElementById(id);
+const normalizeCode = (s) => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const splitCodes = (s) => (s || "").split(/[\s,，;；、]+/).map(normalizeCode).filter(Boolean);
+const srcLink = (key) => `<a href="${SRC[key].u}" target="_blank" rel="noopener">${SRC[key].t}</a>`;
+const join = (arr) => arr.join("、");
+
+function gather(){
+  const rows = [];
+  const add = (role, code) => { if(code) rows.push({role, code}); };
+  add("主手術", normalizeCode($("main").value));
+  add("第一副手術", normalizeCode($("sub1").value));
+  add("第二副手術", normalizeCode($("sub2").value));
+  splitCodes($("proc").value).forEach(c => add("其他處置", c));
+  return rows;
+}
+
+function evaluateCase(){
+  const box = $("resultBox");
+  const all = gather();
+  if(!all.length){
+    box.innerHTML = `<div class="result review"><h3>請先輸入申報碼</h3><p>至少填一個主手術碼或處置碼。</p></div>`;
+    return;
+  }
+
+  const seen = new Set(), dups = [], rows = [];
+  all.forEach(r => {
+    if(seen.has(r.code)){ dups.push(r.code); return; }
+    seen.add(r.code);
+    rows.push({...r, rec: DB[r.code] || null});
+  });
+  const codes = new Set(rows.map(r => r.code));
+
+  // 規則 2 檢查
+  const otherBrain = rows.filter(r => r.rec && r.rec.group === "brain").map(r => r.code);
+  const conflict13 = codes.has("83013C") && otherBrain.length > 0;
+  const orphans = rows.filter(r => r.rec && r.rec.status === "dependent" && !codes.has(r.rec.base));
+  const incompat = [];
+  rows.forEach(r => {
+    if(r.rec && r.rec.noWith){
+      const hit = r.rec.noWith.filter(c => codes.has(c));
+      if(hit.length) incompat.push(`${r.code} 不得與 ${join(hit)} 同時申報`);
+    }
+  });
+
+  const covered = rows.filter(r => r.rec && r.rec.status === "covered" && !(conflict13 && r.code === "83013C"));
+  const unknown = rows.filter(r => !r.rec);
+
+  const conflictNote = `83013C 與 ${join(otherBrain)} 並列：依 83013C 註1，以顱骨穿孔術實施其他神經外科手術應按各該手術項目申報；手術通則七亦規定達手術目的過程中之附帶處置不得另報為副手術。請先確認 83013C 是否應刪除。`;
+
+  let cls, title, lead, notes = [];
+
+  if(covered.length){
+    cls = "dont";
+    title = "Burr 自費：不可收";
+    lead = `本次申報碼 ${join(covered.map(r => r.code))} 的支付點數已含單次使用 Burr 或切割鑽頭，同一支 Burr 不得另向病人收自費。`;
+    if(covered.some(r => r.role.includes("副手術"))){
+      notes.push("已含 Burr 的碼列在副手術：不論依手術通則六是否以減半點數計算，該特材仍屬健保給付項目，不得另收。");
+    }
+    if(conflict13) notes.push(conflictNote);
+    incompat.forEach(t => notes.push(`申報組合錯誤：${t}。`));
+    if(orphans.length) notes.push(`依附碼 ${join(orphans.map(r => r.code))} 缺少基礎碼 ${join(orphans.map(r => r.rec.base))}，請一併修正。`);
+    if(unknown.length) notes.push(`另有未收錄碼 ${join(unknown.map(r => r.code))}；不影響本結論，因為已含 Burr 的碼不會因此改變。`);
+  } else if(conflict13 || incompat.length || orphans.length){
+    cls = "review";
+    title = "Burr 自費：暫不能判定，先修正申報碼";
+    lead = "申報組合本身有問題，修正後再重新判斷。";
+    if(conflict13) notes.push(conflictNote);
+    incompat.forEach(t => notes.push(`${t}（依 115/09/01 現行支付標準）。`));
+    orphans.forEach(r => notes.push(`${r.code} 為依附碼，需與基礎碼 ${r.rec.base} 一起申報。`));
+  } else if(unknown.length){
+    cls = "review";
+    title = "Burr 自費：暫不能判定";
+    lead = `有未收錄代碼 ${join(unknown.map(r => r.code))}，本工具不猜測。`;
+    notes.push("請申報組確認這些碼的支付標準註記是否含單次使用 Burr、切割附件或過程面特殊材料。");
+  } else {
+    cls = "sign";
+    title = "Burr 自費：可進入自費說明流程";
+    lead = "目前輸入的申報碼，支付點數都未含單次使用 Burr。須同時符合下列三點才可收費：";
+    notes.push("術中確實使用單次使用 Burr／高速切割系統；未使用者即無此自費項目。");
+    notes.push("該品項為院內核定可收費的自費品項，並核對實際特材碼或院內料號。");
+    notes.push("術前完成自費說明並取得病人或家屬同意。");
+    if(rows.some(r => r.rec && r.rec.status === "indirect")){
+      notes.push("本次含「間接核對」代碼，建議以院內申報系統的現行支付標準再確認一次。");
+    }
+  }
+  if(dups.length) notes.push(`重複輸入已合併：${join([...new Set(dups)])}。`);
+
+  const rowHtml = rows.map(r => {
+    const st = r.rec ? STATUS[r.rec.status] : STATUS.unknown;
+    return `<tr>
+      <td>${r.role}</td>
+      <td><code>${r.code}</code></td>
+      <td>${r.rec ? r.rec.name : "—"}</td>
+      <td><span class="tag ${st.tag}">${st.label}</span></td>
+      <td>${r.rec ? r.rec.basis : "資料庫尚未收錄"}</td>
+      <td>${r.rec ? srcLink(r.rec.src) : "—"}</td>
+    </tr>`;
+  }).join("");
+
+  const noteHtml = notes.length ? `<ul>${notes.map(n => `<li>${n}</li>`).join("")}</ul>` : "";
+  box.innerHTML = `
+    <div class="result ${cls}">
+      <h3>${title}</h3>
+      <p>${lead}</p>
+      ${noteHtml}
+    </div>
+    <div class="card" style="margin:12px 0 0">
+      <strong>本次代碼判讀</strong>
+      <div class="scroll"><table>
+        <thead><tr><th>角色</th><th>代碼</th><th>項目</th><th>狀態</th><th>依據</th><th>原文</th></tr></thead>
+        <tbody>${rowHtml}</tbody>
+      </table></div>
+    </div>`;
+}
+
+function clearAll(){
+  ["main","sub1","sub2","proc"].forEach(id => $(id).value = "");
+  $("resultBox").innerHTML = "";
+  $("main").focus();
+}
+
+function renderStatic(){
+  const entries = Object.entries(DB);
+  $("knownCodes").innerHTML = entries.map(([c,r]) => `<option value="${c}">${r.name}</option>`).join("");
+  $("dbCount").textContent = entries.length;
+  const order = {covered:0, nocover:1, indirect:2, dependent:3};
+  const rows = entries.sort((a,b) => (order[a[1].status]-order[b[1].status]) || a[0].localeCompare(b[0])).map(([c,r]) => {
+    const st = STATUS[r.status];
+    return `<tr><td><code>${c}</code></td><td>${r.name}</td><td><span class="tag ${st.tag}">${st.label}</span></td><td>${r.basis}</td><td>${srcLink(r.src)}</td></tr>`;
+  }).join("");
+  $("dbTable").innerHTML = `<table><thead><tr><th>代碼</th><th>項目</th><th>分類</th><th>依據</th><th>原文</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $("srcList").innerHTML = Object.keys(SRC).map(k => `<li>${srcLink(k)}</li>`).join("");
+}
+
+$("runBtn").addEventListener("click", evaluateCase);
+$("clearBtn").addEventListener("click", clearAll);
+["main","sub1","sub2"].forEach(id => $(id).addEventListener("keydown", e => { if(e.key === "Enter") evaluateCase(); }));
+renderStatic();
+</script>
+</body>
+</html>
