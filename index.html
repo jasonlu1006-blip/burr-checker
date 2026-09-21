@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>神外 Burr 自費判斷器 v2</title>
+<title>神外 Burr 自費判斷器 v3</title>
 <style>
   :root{
     --bg:#f5f7fa; --card:#ffffff; --ink:#172033; --muted:#5d6a82; --line:#dde3ec;
@@ -82,7 +82,6 @@
   .tag{display:inline-block;border-radius:999px;padding:2px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
   .tag.covered{background:var(--tag-cov-bg);color:var(--tag-cov)}
   .tag.nocover{background:var(--tag-no-bg);color:var(--tag-no)}
-  .tag.indirect{background:var(--tag-ind-bg);color:var(--tag-ind)}
   .tag.dep{background:var(--tag-dep-bg);color:var(--tag-dep)}
   .tag.unknown{background:var(--tag-unk-bg);color:var(--tag-unk)}
   .rule{padding:10px 12px;border-left:4px solid var(--rule-line);background:var(--rule-bg);border-radius:8px;margin:10px 0}
@@ -98,7 +97,7 @@
 <body>
 <div class="wrap">
   <h1>神外 Burr 自費判斷器</h1>
-  <p class="sub">輸入本次<strong>實際要申報</strong>的主手術、副手術與處置碼，判斷同一支單次使用 Burr／高速切割系統是否已含在健保支付點數內。規則版本 v2，2026-09-21。</p>
+  <p class="sub">輸入本次<strong>實際要申報</strong>的主手術、副手術與處置碼，判斷同一支單次使用 Burr／高速切割系統是否已含在健保支付點數內。規則版本 v3，2026-09-21；依據 115/09/01 生效支付標準。</p>
 
   <div class="card">
     <div class="grid">
@@ -137,7 +136,7 @@
 
   <div class="card">
     <h2>已收錄代碼與依據</h2>
-    <p class="small">只收錄已對照健保署原文、會影響神外 Burr 判斷的代碼。每一列都標示依據文件，點文件名稱可開啟原文。</p>
+    <p class="small">只收錄會影響神外 Burr 判斷的代碼，依據皆為 115/09/01 生效之現行支付標準原文。</p>
     <details>
       <summary>查看已收錄代碼（<span id="dbCount"></span> 項）</summary>
       <div class="scroll"><div id="dbTable"></div></div>
@@ -146,8 +145,8 @@
 
   <div class="card">
     <h2>查證範圍</h2>
-    <p class="small">已逐字對照：103 年腦部手術高速切割系統包裹清單、110 年支付標準神外修正對照、脊椎單次使用鑽頭註記之修正規定、115 年第 4 次修正規定（115/09/01 生效）；並核對 115 年第 1 次與第 3 次修正總說明，兩者皆未修改本頁收錄之神外代碼的特材註記。</p>
-    <p class="small">未逐件對照：111 年至 114 年各次修正、115 年第 2 次修正。標示為「間接核對」的代碼，依據是其未列入 103 年 25 項包裹清單，且上述已查文件未見新增註記；使用前請以院內申報系統的現行支付標準再確認。</p>
+    <p class="small">本頁全部代碼的依據，已逐字對照健保署「支付標準壓縮檔（115/09/01 生效，115/08/31 更新）」中第二部第二章第七節手術全文，包括手術通則六、七。</p>
+    <p class="small">健保署日後公告新版支付標準時，本頁需重新對照；最新版請至下方「下載頁」確認生效日期。</p>
   </div>
 
   <div class="card">
@@ -160,87 +159,94 @@
 
 <script>
 const SRC = {
-  s103:  {t:"健保署｜103 年第 2 次支付標準共同擬訂會議紀錄（附件 5：25 項腦部手術包裹單次使用拋棄式高速切割系統）", u:"https://www.nhi.gov.tw/ch/dl-79522-fa2c4c92e17449659011867779fd680d-1.pdf"},
-  s110:  {t:"行政院公報｜110 年支付標準部分診療項目修正對照表（第 27 卷第 90 期，含神外各碼現行註記）", u:"https://gazette.nat.gov.tw/EG_FileManager/eguploadpub/eg027090/ch08/type3/gov70/num23/images/Eg01.pdf"},
-  spine: {t:"健保署｜支付標準部分診療項目修正規定（83002C、83003C、83024C、83046B 單次使用鑽頭註記）", u:"https://www.nhi.gov.tw/ch/dl-51030-94117bc34ed644a9a0c4aa3f9dd22b82-1.pdf"},
-  s1154: {t:"健保署｜115 年第 4 次支付標準修正規定（115/09/01 生效，含手術通則六、七與 83052C、65082B）", u:"https://www.nhi.gov.tw/ch/dl-101750-eb9c143ed81f495891368d3e50a0630a-1.pdf"},
-  notice:{t:"健保署｜115/09/01 生效修正公告頁", u:"https://www.nhi.gov.tw/ch/cp-20377-a36cd-3258-1.html"},
-  list:  {t:"健保署｜法規公告列表（查最新修正用）", u:"https://www.nhi.gov.tw/ch/lp-3258-1.html"},
+  cur:   {t:"健保署｜支付標準壓縮檔（115/09/01 生效）：第二部第二章第七節手術全文", u:"https://www.nhi.gov.tw/ch/dl-99892-daa6c4ba7cd2486296d26b17523a7916-1.zip"},
+  page:  {t:"健保署｜全民健康保險醫療服務給付項目及支付標準（下載頁，查最新版用）", u:"https://www.nhi.gov.tw/ch/lp-3778-1.html"},
+  s1154: {t:"健保署｜115 年第 4 次支付標準修正規定（115/09/01 生效）", u:"https://www.nhi.gov.tw/ch/dl-101750-eb9c143ed81f495891368d3e50a0630a-1.pdf"},
+  s103:  {t:"健保署｜103 年第 2 次支付標準共同擬訂會議紀錄（25 項腦部手術包裹高速切割系統之由來）", u:"https://www.nhi.gov.tw/ch/dl-79522-fa2c4c92e17449659011867779fd680d-1.pdf"},
   law68: {t:"全民健康保險法第 68 條（不得自立名目向保險對象收取費用）", u:"https://law.lia-roc.org.tw/Law/Article?lsid=FL014028&amp;lawno=68"}
 };
 
-const BUNDLE = (p) => `一般材料費及特殊材料費得另加計 ${p}%，上開特殊材料為單一使用之拋棄式特殊材料；屬 103 年納入包裹之 25 項腦部手術`;
-const INDIRECT = "未列入 103 年 25 項包裹清單；已查修正文件未見新增單次使用特材註記";
+const BUNDLE = (p) => `現行支付標準：一般材料費及單一使用之拋棄式特殊材料費，得另加計 ${p}%；屬 103 年納入高速切割系統包裹之 25 項腦部手術`;
+const ONLY = (t) => t ? `現行支付標準${t}，無任何特材加計註記` : "現行支付標準無任何特材加計註記";
+const NS = ONLY("僅註明限神經外科專科醫師施行");
 
 // group: brain = 顱內／顱骨手術，用於 83013C 並列檢查
 const DB = {
   // ===== 已含單次使用 Burr／高速切割系統 =====
-  "83001B":{name:"腦微血管減壓術", status:"covered", group:"brain", basis:BUNDLE(104), src:"s103"},
-  "83013C":{name:"頭顱穿洞術（止血引流、穿刺檢查）", status:"covered", group:"burrhole", basis:BUNDLE(314)+"；註1：如以顱骨穿孔術實施其他神經外科手術，按各該手術項目所訂點數申報", src:"s103"},
-  "83015C":{name:"顱骨切除術", status:"covered", group:"brain", basis:BUNDLE(131), src:"s110"},
-  "83016B":{name:"頭顱成形術", status:"covered", group:"brain", basis:BUNDLE(148), src:"s110"},
-  "83017B":{name:"腦瘤切除－3 公分以內", status:"covered", group:"brain", basis:BUNDLE(96), src:"s110"},
-  "83018B":{name:"腦瘤切除－3 至 6 公分", status:"covered", group:"brain", basis:BUNDLE(80), src:"s110"},
-  "83019B":{name:"腦瘤切除－6 公分以上", status:"covered", group:"brain", basis:BUNDLE(78), src:"s110"},
-  "83036C":{name:"硬腦膜外血腫清除術", status:"covered", group:"brain", basis:BUNDLE(104), src:"s110"},
-  "83037C":{name:"急性硬腦膜下血腫清除術", status:"covered", group:"brain", basis:BUNDLE(106), src:"s110"},
-  "83038C":{name:"慢性硬腦膜下血腫清除術", status:"covered", group:"brain", basis:BUNDLE(132), src:"s103"},
-  "83039B":{name:"腦內血腫清除術", status:"covered", group:"brain", basis:BUNDLE(100), src:"s110"},
-  "83047B":{name:"腦膜或脊髓膜突出修補術", status:"covered", group:"brain", basis:BUNDLE(110), src:"s103"},
-  "83056B":{name:"癲癇症腦葉切除術", status:"covered", group:"brain", basis:BUNDLE(77), src:"s103"},
-  "83057B":{name:"經由蝶竇之腦下垂體瘤切除", status:"covered", group:"brain", basis:BUNDLE(86), src:"s103"},
-  "83063B":{name:"顱內外血管吻合術", status:"covered", group:"brain", basis:BUNDLE(99), src:"s103"},
-  "83064B":{name:"開顱術摘除腦血管瘤－無病徵", status:"covered", group:"brain", basis:BUNDLE(74), src:"s110"},
-  "83065B":{name:"開顱術摘除腦血管瘤－有病徵", status:"covered", group:"brain", basis:BUNDLE(73), src:"s110"},
-  "83066B":{name:"開顱術摘除腦血管瘤－巨大", status:"covered", group:"brain", basis:BUNDLE(73), src:"s110"},
-  "83067B":{name:"開顱術摘除動靜脈畸型－小型表淺", status:"covered", group:"brain", basis:BUNDLE(81), src:"s110"},
-  "83068B":{name:"開顱術摘除動靜脈畸型－小型深部", status:"covered", group:"brain", basis:BUNDLE(77), src:"s110"},
-  "83069B":{name:"開顱術摘除動靜脈畸型－中型表淺", status:"covered", group:"brain", basis:BUNDLE(74), src:"s110"},
-  "83070B":{name:"開顱術摘除動靜脈畸型－中型深部", status:"covered", group:"brain", basis:BUNDLE(72), src:"s110"},
-  "83071B":{name:"開顱術摘除動靜脈畸型－大型", status:"covered", group:"brain", basis:BUNDLE(70), src:"s110"},
-  "83087B":{name:"顏面神經減壓術", status:"covered", group:"brain", basis:BUNDLE(144), src:"s103"},
-  "83088B":{name:"顱底瘤手術", status:"covered", group:"brain", basis:BUNDLE(65), src:"s103"},
-  "83002C":{name:"椎弓切除術（減壓）－二節以內", status:"covered", group:"spine", basis:"一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭得另加計 82%", src:"spine"},
-  "83003C":{name:"椎弓切除術（減壓）－超過二節", status:"covered", group:"spine", basis:"一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭得另加計 73%", src:"spine"},
-  "83024C":{name:"椎間盤切除術－腰椎", status:"covered", group:"spine", basis:"一般材料費及單次使用切割附件得另加計 69%", src:"spine"},
-  "83046B":{name:"脊椎融合術－後融合，有固定物，六節以內", status:"covered", group:"spine", basis:"一般材料費及單次使用鑽頭得另加計 58%", src:"spine"},
+  "83001B":{name:"腦微血管減壓術", status:"covered", group:"brain", basis:BUNDLE(104)},
+  "83013C":{name:"頭顱穿洞術（止血引流、穿刺檢查）", status:"covered", group:"burrhole", basis:BUNDLE(314)+"；註1：如以顱骨穿孔術實施其他神經外科手術，按各該手術項目所訂點數申報"},
+  "83015C":{name:"顱骨切除術", status:"covered", group:"brain", basis:BUNDLE(131)},
+  "83016B":{name:"頭顱成形術", status:"covered", group:"brain", basis:BUNDLE(148)},
+  "83017B":{name:"腦瘤切除－3 公分以內", status:"covered", group:"brain", basis:BUNDLE(96)},
+  "83018B":{name:"腦瘤切除－3 至 6 公分", status:"covered", group:"brain", basis:BUNDLE(80)},
+  "83019B":{name:"腦瘤切除－6 公分以上", status:"covered", group:"brain", basis:BUNDLE(78)},
+  "83036C":{name:"硬腦膜外血腫清除術", status:"covered", group:"brain", basis:BUNDLE(104)},
+  "83037C":{name:"急性硬腦膜下血腫清除術", status:"covered", group:"brain", basis:BUNDLE(106)},
+  "83038C":{name:"慢性硬腦膜下血腫清除術", status:"covered", group:"brain", basis:BUNDLE(132)},
+  "83039B":{name:"腦內血腫清除術", status:"covered", group:"brain", basis:BUNDLE(100)},
+  "83047B":{name:"腦膜或脊髓膜突出修補術", status:"covered", group:"brain", basis:BUNDLE(110)},
+  "83056B":{name:"癲癇症腦葉切除術", status:"covered", group:"brain", basis:BUNDLE(77)},
+  "83057B":{name:"經由蝶竇之腦下垂體瘤切除", status:"covered", group:"brain", basis:BUNDLE(86)},
+  "83063B":{name:"顱內外血管吻合術", status:"covered", group:"brain", basis:BUNDLE(99)},
+  "83064B":{name:"開顱術摘除腦血管瘤－無病徵", status:"covered", group:"brain", basis:BUNDLE(74)},
+  "83065B":{name:"開顱術摘除腦血管瘤－有病徵", status:"covered", group:"brain", basis:BUNDLE(73)},
+  "83066B":{name:"開顱術摘除腦血管瘤－巨大", status:"covered", group:"brain", basis:BUNDLE(73)},
+  "83067B":{name:"開顱術摘除動靜脈畸型－小型表淺", status:"covered", group:"brain", basis:BUNDLE(81)},
+  "83068B":{name:"開顱術摘除動靜脈畸型－小型深部", status:"covered", group:"brain", basis:BUNDLE(77)},
+  "83069B":{name:"開顱術摘除動靜脈畸型－中型表淺", status:"covered", group:"brain", basis:BUNDLE(74)},
+  "83070B":{name:"開顱術摘除動靜脈畸型－中型深部", status:"covered", group:"brain", basis:BUNDLE(72)},
+  "83071B":{name:"開顱術摘除動靜脈畸型－大型", status:"covered", group:"brain", basis:BUNDLE(70)},
+  "83087B":{name:"顏面神經減壓術", status:"covered", group:"brain", basis:BUNDLE(144)},
+  "83088B":{name:"顱底瘤手術", status:"covered", group:"brain", basis:BUNDLE(65)},
+  "83002C":{name:"椎弓切除術（減壓）－二節以內", status:"covered", group:"spine", basis:"現行支付標準：一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭，得另加計 82%"},
+  "83003C":{name:"椎弓切除術（減壓）－超過二節", status:"covered", group:"spine", basis:"現行支付標準：一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭，得另加計 73%"},
+  "83024C":{name:"椎間盤切除術－腰椎", status:"covered", group:"spine", basis:"現行支付標準：一般材料費及單次使用切割附件，得另加計 69%"},
+  "83046B":{name:"脊椎融合術－後融合，有固定物，六節以內", status:"covered", group:"spine", basis:"現行支付標準：一般材料費及單次使用鑽頭，得另加計 58%"},
 
-  // ===== 支付標準原文未列單次使用特材註記 =====
-  "83011B":{name:"凹陷性顱骨骨折之手術－簡單骨折", status:"nocover", group:"brain", basis:"原文僅註明限神經外科專科醫師施行，無特材加計註記", src:"s110"},
-  "83012B":{name:"凹陷性顱骨骨折之手術－開放骨折", status:"nocover", group:"brain", basis:"原文僅註明限神經外科專科醫師施行，無特材加計註記", src:"s110"},
-  "83052C":{name:"歐氏貯囊置放手術（Ommaya reservoir）", status:"nocover", group:"brain", basis:"115/09/01 現行原文僅註明限神經外科專科醫師施行，無特材加計註記", src:"s1154"},
-  "83022C":{name:"椎間盤切除術－頸椎", status:"nocover", group:"spine", basis:"原文單次使用切割附件註記僅列 83024C，本碼無", src:"spine"},
-  "83023C":{name:"椎間盤切除術－胸椎", status:"nocover", group:"spine", basis:"原文單次使用切割附件註記僅列 83024C，本碼無", src:"spine"},
-  "83033B":{name:"椎弓整形術（Laminoplasty）", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"s110"},
-  "83040B":{name:"良性脊髓腫瘤切除術", status:"nocover", group:"spine", basis:"原文僅註明限神經外科及骨科專科醫師施行，無特材加計註記", src:"s110"},
-  "83041B":{name:"惡性脊髓腫瘤切除術", status:"nocover", group:"spine", basis:"原文僅註明限神經外科及骨科專科醫師施行，無特材加計註記", src:"s110"},
-  "83042B":{name:"脊椎內脊髓內腫瘤切除術", status:"nocover", group:"spine", basis:"原文僅註明限神經外科及骨科專科醫師施行，無特材加計註記", src:"s110"},
-  "83043B":{name:"脊椎融合術－前融合，無固定物，四節以內", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"spine"},
-  "83044B":{name:"脊椎融合術－前融合，有固定物，四節以內", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"spine"},
-  "83045B":{name:"脊椎融合術－後融合，無固定物", status:"nocover", group:"spine", basis:"原文無特材加計註記", src:"spine"},
-  "65082B":{name:"經鼻內視鏡顱底腦脊髓液漏修補術", status:"nocover", group:"skullbase", basis:"原文為一般材料費得另加計 4%，未列單次使用特材；不得同時申報 65060B、83047B 及 83057B", src:"s1154", noWith:["65060B","83047B","83057B"]},
-
-  // ===== 間接核對：未列入 103 年包裹清單 =====
-  "83010B":{name:"腦組織活體切片", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83049B":{name:"腦室腹腔分流手術（V-P shunt）", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83051B":{name:"腦室體外引流（EVD）", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83080B":{name:"顱內壓監視置入", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83081B":{name:"立體定位術－切片", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83082B":{name:"立體定位術－抽吸", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83083B":{name:"立體定位術－放射同位素置放", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
-  "83084B":{name:"立體定位術－功能性失調", status:"indirect", group:"brain", basis:INDIRECT, src:"s103"},
+  // ===== 現行支付標準無特材加計註記 =====
+  "83004B":{name:"顳下減壓術－單側", status:"nocover", group:"brain", basis:ONLY("僅註明限神經外科專科醫師施行")},
+  "83005B":{name:"顳下減壓術－雙側", status:"nocover", group:"brain", basis:ONLY("僅註明限神經外科專科醫師施行")},
+  "83010B":{name:"腦組織活體切片", status:"nocover", group:"brain", basis:NS},
+  "83011B":{name:"凹陷性顱骨骨折之手術－簡單骨折", status:"nocover", group:"brain", basis:NS},
+  "83012B":{name:"凹陷性顱骨骨折之手術－開放骨折", status:"nocover", group:"brain", basis:NS},
+  "83049B":{name:"腦室腹腔分流手術（V-P shunt）", status:"nocover", group:"brain", basis:NS},
+  "83050B":{name:"水腦症腦室心房分流手術（V-A shunt）", status:"nocover", group:"brain", basis:NS},
+  "83051B":{name:"腦室體外引流（EVD）", status:"nocover", group:"brain", basis:NS},
+  "83052C":{name:"歐氏貯囊置放手術（Ommaya reservoir）", status:"nocover", group:"brain", basis:NS},
+  "83055B":{name:"腦脊髓液分流管重置", status:"nocover", group:"brain", basis:ONLY("僅註明限神經外科專科醫師施行、已含移除及再置之費用")},
+  "83077B":{name:"顱骨縫線早期封閉症手術－簡單縫合線顱骨咬除", status:"nocover", group:"brain", basis:ONLY("")},
+  "83078B":{name:"顱骨縫線早期封閉症手術－顱骨分割法", status:"nocover", group:"brain", basis:ONLY("")},
+  "83080B":{name:"顱內壓監視置入", status:"nocover", group:"brain", basis:NS},
+  "83081B":{name:"立體定位術－切片", status:"nocover", group:"brain", basis:ONLY("僅註明施行醫師專科限制")},
+  "83082B":{name:"立體定位術－抽吸", status:"nocover", group:"brain", basis:ONLY("僅註明施行醫師專科限制")},
+  "83083B":{name:"立體定位術－放射同位素置放", status:"nocover", group:"brain", basis:ONLY("僅註明施行醫師專科限制")},
+  "83084B":{name:"立體定位術－功能性失調", status:"nocover", group:"brain", basis:ONLY("僅註明施行醫師專科限制")},
+  "83053B":{name:"腰椎蜘蛛網膜下－腹腔分流手術（L-P shunt）", status:"nocover", group:"spine", basis:NS},
+  "83054B":{name:"腰椎腦脊髓液池體外引流", status:"nocover", group:"spine", basis:ONLY("僅註明限神經外科或麻醉專科醫師施行")},
+  "83022C":{name:"椎間盤切除術－頸椎", status:"nocover", group:"spine", basis:"現行支付標準無特材加計註記；單次使用切割附件註記僅列 83024C"},
+  "83023C":{name:"椎間盤切除術－胸椎", status:"nocover", group:"spine", basis:"現行支付標準無特材加計註記；單次使用切割附件註記僅列 83024C"},
+  "83033B":{name:"椎弓整形術（Laminoplasty）", status:"nocover", group:"spine", basis:ONLY("")},
+  "83040B":{name:"良性脊髓腫瘤切除術", status:"nocover", group:"spine", basis:ONLY("僅註明限神經外科及骨科專科醫師施行")},
+  "83041B":{name:"惡性脊髓腫瘤切除術", status:"nocover", group:"spine", basis:ONLY("僅註明限神經外科及骨科專科醫師施行")},
+  "83042B":{name:"脊椎內脊髓內腫瘤切除術", status:"nocover", group:"spine", basis:ONLY("僅註明限神經外科及骨科專科醫師施行")},
+  "83043B":{name:"脊椎融合術－前融合，無固定物，四節以內", status:"nocover", group:"spine", basis:ONLY("")},
+  "83044B":{name:"脊椎融合術－前融合，有固定物，四節以內", status:"nocover", group:"spine", basis:ONLY("")},
+  "83045B":{name:"脊椎融合術－後融合，無固定物", status:"nocover", group:"spine", basis:ONLY("")},
+  "83072B":{name:"脊椎腔內動靜脈畸型切除術－二節以內", status:"nocover", group:"spine", basis:NS},
+  "83073B":{name:"脊椎腔內動靜脈畸型切除術－超過二節", status:"nocover", group:"spine", basis:NS},
+  "65082B":{name:"經鼻內視鏡顱底腦脊髓液漏修補術", status:"nocover", group:"skullbase", basis:"現行支付標準：一般材料費得另加計 4%，未列單次使用特材；不得同時申報 65060B、83047B 及 83057B", noWith:["65060B","83047B","83057B"]},
 
   // ===== 依附碼 =====
-  "83014C":{name:"頭顱穿洞術－每加一孔", status:"dependent", group:"burrhole", base:"83013C", basis:"附加孔碼，原文無特材加計註記；判斷跟隨 83013C", src:"s103"},
-  "83095B":{name:"前融合，無固定物－每增加四節以內", status:"dependent", group:"spine", base:"83043B", basis:"附加節數碼；判斷跟隨 83043B", src:"spine"},
-  "83096B":{name:"前融合，有固定物－每增加四節以內", status:"dependent", group:"spine", base:"83044B", basis:"附加節數碼；判斷跟隨 83044B", src:"spine"},
-  "83097B":{name:"後融合，有固定物－每增加六節以內", status:"dependent", group:"spine", base:"83046B", basis:"附加節數碼；判斷跟隨 83046B", src:"spine"}
+  "83014C":{name:"頭顱穿洞術－每加一孔", status:"dependent", group:"burrhole", base:"83013C", basis:"附加孔碼，現行支付標準無特材加計註記；判斷跟隨 83013C"},
+  "83095B":{name:"前融合，無固定物－每增加四節以內", status:"dependent", group:"spine", base:"83043B", basis:"附加節數碼；判斷跟隨 83043B"},
+  "83096B":{name:"前融合，有固定物－每增加四節以內", status:"dependent", group:"spine", base:"83044B", basis:"附加節數碼；判斷跟隨 83044B"},
+  "83097B":{name:"後融合，有固定物－每增加六節以內", status:"dependent", group:"spine", base:"83046B", basis:"附加節數碼；判斷跟隨 83046B"}
 };
+Object.values(DB).forEach(r => { r.src = "cur"; });
 
 const STATUS = {
   covered:  {tag:"covered",  label:"已含 Burr"},
-  nocover:  {tag:"nocover",  label:"原文未列特材"},
-  indirect: {tag:"indirect", label:"間接核對：未含"},
+  nocover:  {tag:"nocover",  label:"未含特材"},
   dependent:{tag:"dep",      label:"依附碼"},
   unknown:  {tag:"unknown",  label:"未收錄"}
 };
@@ -326,9 +332,6 @@ function evaluateCase(){
     notes.push("術中確實使用單次使用 Burr／高速切割系統；未使用者即無此自費項目。");
     notes.push("該品項為院內核定可收費的自費品項，並核對實際特材碼或院內料號。");
     notes.push("術前完成自費說明並取得病人或家屬同意。");
-    if(rows.some(r => r.rec && r.rec.status === "indirect")){
-      notes.push("本次含「間接核對」代碼，建議以院內申報系統的現行支付標準再確認一次。");
-    }
   }
   if(dups.length) notes.push(`重複輸入已合併：${join([...new Set(dups)])}。`);
 
@@ -370,7 +373,7 @@ function renderStatic(){
   const entries = Object.entries(DB);
   $("knownCodes").innerHTML = entries.map(([c,r]) => `<option value="${c}">${r.name}</option>`).join("");
   $("dbCount").textContent = entries.length;
-  const order = {covered:0, nocover:1, indirect:2, dependent:3};
+  const order = {covered:0, nocover:1, dependent:2};
   const rows = entries.sort((a,b) => (order[a[1].status]-order[b[1].status]) || a[0].localeCompare(b[0])).map(([c,r]) => {
     const st = STATUS[r.status];
     return `<tr><td><code>${c}</code></td><td>${r.name}</td><td><span class="tag ${st.tag}">${st.label}</span></td><td>${r.basis}</td><td>${srcLink(r.src)}</td></tr>`;
