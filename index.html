@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>神外 Burr 自費判斷器 v3</title>
+<title>神外 Burr 自費判斷器 v4</title>
 <style>
   :root{
     --bg:#f5f7fa; --card:#ffffff; --ink:#172033; --muted:#5d6a82; --line:#dde3ec;
@@ -91,33 +91,47 @@
   code{background:var(--code-bg);border-radius:6px;padding:1px 5px;font-size:.92em}
   ol.src{padding-left:1.3em;margin:8px 0}
   ol.src li{margin:6px 0}
+  .pgroup{margin:14px 0 4px;font-weight:700;font-size:.95rem}
+  .plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+  .pitem{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--field)}
+  .pitem.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .pitem label{display:flex;gap:8px;align-items:flex-start;font-weight:600;margin:0;cursor:pointer}
+  .pitem input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+  .pitem .pcode{display:block;font-size:.78rem;color:var(--muted);font-weight:400}
+  .pitem select{margin-top:8px;width:100%;border:1px solid var(--field-line);border-radius:8px;padding:8px;font-size:15px;background:var(--field);color:var(--ink);font-family:inherit}
   .footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>神外 Burr 自費判斷器</h1>
-  <p class="sub">輸入本次<strong>實際要申報</strong>的主手術、副手術與處置碼，判斷同一支單次使用 Burr／高速切割系統是否已含在健保支付點數內。規則版本 v3，2026-09-21；依據 115/09/01 生效支付標準。</p>
+  <p class="sub">勾選本次術式，判斷同一支單次使用 Burr／高速切割系統是否已含在健保支付點數內。規則版本 v4，2026-09-21；依據 115/09/01 生效支付標準。</p>
 
   <div class="card">
-    <div class="grid">
-      <div>
-        <label for="main">主手術碼</label>
-        <input id="main" list="knownCodes" placeholder="例如 83039B" autocomplete="off" autocapitalize="characters">
+    <h2>本次術式</h2>
+    <p class="small">勾選本次要做的術式，可複選。需要區分代碼的術式，勾選後會出現選項。</p>
+    <div id="procPicker"></div>
+    <details id="adv">
+      <summary>進階：直接輸入申報碼（清單沒有的術式用）</summary>
+      <div class="grid" style="margin-top:12px">
+        <div>
+          <label for="main">主手術碼</label>
+          <input id="main" list="knownCodes" placeholder="例如 83039B" autocomplete="off" autocapitalize="characters">
+        </div>
+        <div>
+          <label for="sub1">第一副手術碼</label>
+          <input id="sub1" list="knownCodes" placeholder="例如 83051B" autocomplete="off" autocapitalize="characters">
+        </div>
+        <div>
+          <label for="sub2">第二副手術碼</label>
+          <input id="sub2" list="knownCodes" placeholder="例如 83046B" autocomplete="off" autocapitalize="characters">
+        </div>
+        <div>
+          <label for="proc">其他處置碼 <span class="hint">可輸入多個，以空白、逗號或換行分隔</span></label>
+          <textarea id="proc" placeholder="例如：83097B"></textarea>
+        </div>
       </div>
-      <div>
-        <label for="sub1">第一副手術碼</label>
-        <input id="sub1" list="knownCodes" placeholder="例如 83051B" autocomplete="off" autocapitalize="characters">
-      </div>
-      <div>
-        <label for="sub2">第二副手術碼</label>
-        <input id="sub2" list="knownCodes" placeholder="例如 83046B" autocomplete="off" autocapitalize="characters">
-      </div>
-      <div>
-        <label for="proc">其他處置碼 <span class="hint">可輸入多個，以空白、逗號或換行分隔</span></label>
-        <textarea id="proc" placeholder="例如：83097B"></textarea>
-      </div>
-    </div>
+    </details>
     <datalist id="knownCodes"></datalist>
     <div class="btns">
       <button class="primary" type="button" id="runBtn">判斷 Burr 是否可收自費</button>
@@ -257,9 +271,71 @@ const splitCodes = (s) => (s || "").split(/[\s,，;；、]+/).map(normalizeCode)
 const srcLink = (key) => `<a href="${SRC[key].u}" target="_blank" rel="noopener">${SRC[key].t}</a>`;
 const join = (arr) => arr.join("、");
 
+// 術式 → 申報碼（每一碼皆在 DB 內，依據 115/09/01 支付標準）
+const PROCS = [
+  {g:"腦部手術", items:[
+    {id:"csdh", name:"慢性硬腦膜下血腫鑽孔引流", codes:["83038C"]},
+    {id:"asdh", name:"急性硬腦膜下血腫清除", codes:["83037C"]},
+    {id:"edh", name:"硬腦膜外血腫清除", codes:["83036C"]},
+    {id:"ich", name:"腦內血腫清除", codes:["83039B"]},
+    {id:"dc", name:"減壓性顱骨切除", codes:["83015C"]},
+    {id:"tumor", name:"開顱腦瘤切除", opt:{label:"腫瘤大小", choices:[["3 公分以內",["83017B"]],["3 至 6 公分",["83018B"]],["6 公分以上",["83019B"]]]}},
+    {id:"skullbase", name:"顱底瘤手術", codes:["83088B"]},
+    {id:"tss", name:"經蝶竇腦下垂體瘤切除", codes:["83057B"]},
+    {id:"aneu", name:"開顱動脈瘤夾閉", opt:{label:"動脈瘤", choices:[["無症狀",["83064B"]],["有症狀",["83065B"]],["巨大",["83066B"]]]}},
+    {id:"avm", name:"開顱 AVM 切除", opt:{label:"AVM 大小與位置", choices:[["小型（≦2.5 cm）表淺",["83067B"]],["小型（≦2.5 cm）深部",["83068B"]],["中型（2.5–5 cm）表淺",["83069B"]],["中型（2.5–5 cm）深部",["83070B"]],["大型（>5 cm）",["83071B"]]]}},
+    {id:"mvd", name:"腦微血管減壓術（MVD）", codes:["83001B"]},
+    {id:"cranio", name:"顱骨成形術", codes:["83016B"]},
+    {id:"bypass", name:"顱內外血管吻合術（EC-IC bypass）", codes:["83063B"]},
+    {id:"epi", name:"癲癇手術", codes:["83056B"]}
+  ]},
+  {g:"腦脊髓液與置入類", items:[
+    {id:"evd", name:"腦室體外引流（EVD）", codes:["83051B"]},
+    {id:"vps", name:"腦室腹腔分流（V-P shunt）", codes:["83049B"]},
+    {id:"revision", name:"分流管重置（shunt revision）", codes:["83055B"]},
+    {id:"lps", name:"腰椎腹腔分流（L-P shunt）", codes:["83053B"]},
+    {id:"lumbar", name:"腰椎腦脊髓液引流", codes:["83054B"]},
+    {id:"ommaya", name:"Ommaya reservoir 置放", codes:["83052C"]},
+    {id:"icp", name:"顱內壓監視器置入（ICP）", codes:["83080B"]},
+    {id:"stereo", name:"立體定位手術", opt:{label:"目的", choices:[["切片",["83081B"]],["抽吸",["83082B"]]]}},
+    {id:"func", name:"功能性立體定位手術（如 DBS）", codes:["83084B"]}
+  ]},
+  {g:"脊椎手術", items:[
+    {id:"lami", name:"椎弓切除減壓", opt:{label:"節數", choices:[["二節以內",["83002C"]],["超過二節",["83003C"]]]}},
+    {id:"ldisc", name:"腰椎椎間盤切除", codes:["83024C"]},
+    {id:"pfusion", name:"後融合（有固定物）", opt:{label:"融合節數", choices:[["六節以內",["83046B"]],["七至十二節",["83046B","83097B"]]]}},
+    {id:"cdisc", name:"頸椎椎間盤切除", codes:["83022C"]},
+    {id:"afusion", name:"前融合（有固定物）", opt:{label:"融合節數", choices:[["四節以內",["83044B"]],["五至八節",["83044B","83096B"]]]}},
+    {id:"lplasty", name:"椎弓整形術（Laminoplasty）", codes:["83033B"]},
+    {id:"sct", name:"脊髓腫瘤切除", opt:{label:"腫瘤性質", choices:[["良性",["83040B"]],["惡性",["83041B"]],["髓內",["83042B"]]]}}
+  ]}
+];
+
+function renderPicker(){
+  $("procPicker").innerHTML = PROCS.map(g => `
+    <div class="pgroup">${g.g}</div>
+    <div class="plist">${g.items.map(it => {
+      const codeTxt = it.codes ? it.codes.join("、") : "依選項";
+      const sel = it.opt ? `<select id="opt_${it.id}" aria-label="${it.opt.label}" hidden>${it.opt.choices.map((c,i)=>`<option value="${i}">${it.opt.label}：${c[0]}（${c[1].join("＋")}）</option>`).join("")}</select>` : "";
+      return `<div class="pitem" id="pi_${it.id}"><label><input type="checkbox" id="chk_${it.id}" data-id="${it.id}"><span>${it.name}<span class="pcode">${codeTxt}</span></span></label>${sel}</div>`;
+    }).join("")}</div>`).join("");
+  PROCS.forEach(g => g.items.forEach(it => {
+    $("chk_"+it.id).addEventListener("change", e => {
+      $("pi_"+it.id).classList.toggle("on", e.target.checked);
+      if(it.opt) $("opt_"+it.id).hidden = !e.target.checked;
+    });
+  }));
+}
+
 function gather(){
   const rows = [];
   const add = (role, code) => { if(code) rows.push({role, code}); };
+  PROCS.forEach(g => g.items.forEach(it => {
+    if(!$("chk_"+it.id).checked) return;
+    const codes = it.opt ? it.opt.choices[+$("opt_"+it.id).value][1] : it.codes;
+    const label = it.opt ? `${it.name}（${it.opt.choices[+$("opt_"+it.id).value][0]}）` : it.name;
+    codes.forEach(c => add("術式：" + label, c));
+  }));
   add("主手術", normalizeCode($("main").value));
   add("第一副手術", normalizeCode($("sub1").value));
   add("第二副手術", normalizeCode($("sub2").value));
@@ -271,7 +347,7 @@ function evaluateCase(){
   const box = $("resultBox");
   const all = gather();
   if(!all.length){
-    box.innerHTML = `<div class="result review"><h3>請先輸入申報碼</h3><p>至少填一個主手術碼或處置碼。</p></div>`;
+    box.innerHTML = `<div class="result review"><h3>請先勾選術式</h3><p>至少勾選一個術式，或在進階區輸入申報碼。</p></div>`;
     return;
   }
 
@@ -306,8 +382,8 @@ function evaluateCase(){
     cls = "dont";
     title = "Burr 自費：不可收";
     lead = `本次申報碼 ${join(covered.map(r => r.code))} 的支付點數已含單次使用 Burr 或切割鑽頭，同一支 Burr 不得另向病人收自費。`;
-    if(covered.some(r => r.role.includes("副手術"))){
-      notes.push("已含 Burr 的碼列在副手術：不論依手術通則六是否以減半點數計算，該特材仍屬健保給付項目，不得另收。");
+    if(covered.some(r => r.role.includes("副手術")) || new Set(rows.map(r => r.role)).size > 1){
+      notes.push("已含 Burr 的碼即使列為副手術，不論依手術通則六是否以減半點數計算，該特材仍屬健保給付項目，不得另收。");
     }
     if(conflict13) notes.push(conflictNote);
     incompat.forEach(t => notes.push(`申報組合錯誤：${t}。`));
@@ -365,8 +441,12 @@ function evaluateCase(){
 
 function clearAll(){
   ["main","sub1","sub2","proc"].forEach(id => $(id).value = "");
+  PROCS.forEach(g => g.items.forEach(it => {
+    $("chk_"+it.id).checked = false; $("pi_"+it.id).classList.remove("on");
+    if(it.opt){ $("opt_"+it.id).hidden = true; $("opt_"+it.id).value = "0"; }
+  }));
   $("resultBox").innerHTML = "";
-  $("main").focus();
+  window.scrollTo({top:0});
 }
 
 function renderStatic(){
@@ -385,7 +465,10 @@ function renderStatic(){
 $("runBtn").addEventListener("click", evaluateCase);
 $("clearBtn").addEventListener("click", clearAll);
 ["main","sub1","sub2"].forEach(id => $(id).addEventListener("keydown", e => { if(e.key === "Enter") evaluateCase(); }));
+renderPicker();
 renderStatic();
+// 所有術式代碼必須存在於 DB
+PROCS.forEach(g=>g.items.forEach(it=>(it.codes||it.opt.choices.flatMap(c=>c[1])).forEach(c=>{ if(!DB[c]) console.error("PROCS 代碼不在 DB：", c); })));
 </script>
 </body>
 </html>
